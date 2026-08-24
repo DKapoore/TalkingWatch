@@ -12,7 +12,7 @@ window.APP_CONFIG = {
   // Kapoore Art License System so the Google Apps Script SECRET_KEY never
   // reaches the browser, and so trial start dates can't be reset just by
   // clearing localStorage.
-  backendApiUrl: "https://talkingwatch.onrender.com/api",
+  backendApiUrl: "/api",
 
   trialDays: 10,
 

@@ -1,6 +1,6 @@
 "use strict";
 
-const CACHE_NAME = "kapoore-talking-clock-v2";
+const CACHE_NAME = "kapoore-talking-clock-v3";
 const APP_SHELL = [
   "./",
   "./index.html",

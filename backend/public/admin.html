@@ -1,0 +1,95 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<title>Kapoore Art — Admin</title>
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<style>
+  body { font-family: system-ui, sans-serif; background:#0a0c10; color:#f5f6f8; margin:0; padding:24px; }
+  h1 { font-size: 18px; letter-spacing:0.05em; color:#ffb020; }
+  .row { display:flex; gap:8px; margin-bottom:20px; }
+  input { background:#14171d; border:1px solid #262b34; color:#f5f6f8; padding:10px; border-radius:8px; flex:1; }
+  button { background:#ffb020; color:#171208; border:none; padding:10px 16px; border-radius:8px; font-weight:600; cursor:pointer; }
+  button.ghost { background:transparent; border:1px solid #262b34; color:#f5f6f8; }
+  table { width:100%; border-collapse: collapse; }
+  th, td { text-align:left; padding:10px; border-bottom:1px solid #262b34; font-size:14px; vertical-align: top; }
+  th { color:#8b93a1; font-weight:600; }
+  .badge { padding:2px 8px; border-radius:999px; font-size:12px; }
+  .badge.pending { background:#3a2f10; color:#ffb020; }
+  .badge.done { background:#123a24; color:#35d07f; }
+  a.file-link { color:#ffb020; }
+  .code { font-family: monospace; background:#14171d; padding:4px 8px; border-radius:6px; }
+</style>
+</head>
+<body>
+  <h1>KAPOORE ART — Talking Clock Admin</h1>
+  <div class="row">
+    <input id="admin-key" type="password" placeholder="Admin key" />
+    <button id="btn-load">Load Receipts</button>
+  </div>
+  <table>
+    <thead>
+      <tr><th>Uploaded</th><th>Device</th><th>Email</th><th>Receipt</th><th>Status</th><th></th></tr>
+    </thead>
+    <tbody id="receipt-rows"></tbody>
+  </table>
+
+<script>
+function key() { return document.getElementById('admin-key').value.trim(); }
+
+async function loadReceipts() {
+  const res = await fetch('/admin/api/receipts', { headers: { 'X-Admin-Key': key() } });
+  if (!res.ok) { alert('Invalid admin key or server error.'); return; }
+  const data = await res.json();
+  const rows = document.getElementById('receipt-rows');
+  rows.innerHTML = '';
+  data.receipts.forEach(r => {
+    const tr = document.createElement('tr');
+    tr.innerHTML = `
+      <td>${new Date(r.uploadedAt).toLocaleString()}</td>
+      <td>${r.deviceId}</td>
+      <td>${r.email || '—'}</td>
+      <td><a class="file-link" href="#" data-id="${r.id}">${r.originalName}</a></td>
+      <td>${r.verified
+          ? `<span class="badge done">Verified</span><br><span class="code">${r.serialCode || ''}</span>`
+          : `<span class="badge pending">Pending</span>`}</td>
+      <td>${r.verified ? '' : `<button class="ghost" data-verify="${r.id}">Verify &amp; Generate License</button>`}</td>
+    `;
+    rows.appendChild(tr);
+  });
+
+  rows.querySelectorAll('a.file-link').forEach(a => {
+    a.addEventListener('click', async (e) => {
+      e.preventDefault();
+      const res = await fetch('/admin/api/receipt-file/' + a.dataset.id, { headers: { 'X-Admin-Key': key() } });
+      const blob = await res.blob();
+      window.open(URL.createObjectURL(blob), '_blank');
+    });
+  });
+
+  rows.querySelectorAll('button[data-verify]').forEach(btn => {
+    btn.addEventListener('click', async () => {
+      btn.disabled = true;
+      btn.textContent = 'Generating…';
+      const res = await fetch('/admin/api/verify-receipt', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', 'X-Admin-Key': key() },
+        body: JSON.stringify({ receiptId: btn.dataset.verify })
+      });
+      const data = await res.json();
+      if (data.success) {
+        alert('Lifetime license generated: ' + data.serialCode + '\n\nSend this code to the customer (auto-emailed if they gave an email address).');
+        loadReceipts();
+      } else {
+        alert('Failed: ' + data.message);
+        btn.disabled = false;
+        btn.textContent = 'Verify & Generate License';
+      }
+    });
+  });
+}
+
+document.getElementById('btn-load').addEventListener('click', loadReceipts);
+</script>
+</body>
+</html>

@@ -1,0 +1,339 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover, maximum-scale=1" />
+<title>Kapoore Art Talking Clock</title>
+<meta name="description" content="Hear the current time announced automatically while you drive." />
+<meta name="theme-color" content="#0a0c10" />
+<link rel="manifest" href="manifest.webmanifest" />
+<link rel="icon" href="icons/icon-192.png" />
+<link rel="apple-touch-icon" href="icons/icon-192.png" />
+<meta name="apple-mobile-web-app-capable" content="yes" />
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+<meta name="apple-mobile-web-app-title" content="Talking Clock" />
+<link rel="preconnect" href="https://fonts.googleapis.com" />
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+<link href="https://fonts.googleapis.com/css2?family=Rajdhani:wght@500;600;700&family=Space+Grotesk:wght@400;500;600;700&family=Orbitron:wght@500;600;700;800&display=swap" rel="stylesheet" />
+<link rel="stylesheet" href="style.css" />
+</head>
+<body data-view="loading">
+<audio id="keep-alive-audio" src="assets/silence.wav" loop preload="auto" playsinline style="display:none"></audio>
+
+<!-- ======================= ONBOARDING ======================= -->
+<section id="view-onboarding" class="view" hidden>
+  <div class="onboard-wrap">
+    <div class="brand-block">
+      <div class="wordmark">KAPOORE ART</div>
+      <h1 class="product-title">Talking Clock</h1>
+    </div>
+    <p class="onboard-tagline">Know the time without looking at your watch.<br>Perfect for driving with Bluetooth audio.</p>
+
+    <div class="onboard-actions">
+      <button id="btn-install-onboard" class="btn btn-primary btn-large" hidden>Install App</button>
+      <button id="btn-continue-browser" class="btn btn-ghost btn-large">Continue in Browser</button>
+    </div>
+
+    <div id="ios-install-hint" class="ios-hint" hidden>
+      <p>On iPhone: tap <strong>Share</strong> → <strong>Add to Home Screen</strong> to install.</p>
+    </div>
+  </div>
+</section>
+
+<!-- ======================= FIRST-TIME SETUP ======================= -->
+<section id="view-setup" class="view" hidden>
+  <div class="setup-wrap">
+    <div class="wordmark small">KAPOORE ART</div>
+    <h2 class="setup-title">Quick Setup</h2>
+
+    <label class="field">
+      <span class="field-label">Language</span>
+      <select id="setup-language" class="select"></select>
+    </label>
+
+    <label class="field">
+      <span class="field-label">Announcement</span>
+      <select id="setup-interval" class="select"></select>
+    </label>
+
+    <label class="field">
+      <span class="field-label">Voice</span>
+      <select id="setup-voice" class="select"></select>
+    </label>
+
+    <button id="btn-test-voice-setup" class="btn btn-outline">▶ Test Voice</button>
+    <p id="setup-voice-msg" class="hint-text" role="status"></p>
+
+    <button id="btn-start-setup" class="btn btn-primary btn-large">Start Talking Clock</button>
+  </div>
+</section>
+
+<!-- ======================= MAIN DRIVING SCREEN ======================= -->
+<section id="view-main" class="view" hidden>
+
+  <header class="topbar">
+    <div class="brand-row">
+      <div class="brand-icon">
+        <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="1.8"><circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 2" stroke-linecap="round" stroke-linejoin="round"/></svg>
+      </div>
+      <div class="brand-text">
+        <div class="wordmark small">KAPOORE ART</div>
+        <div class="brand-subtitle">Talking Clock</div>
+      </div>
+    </div>
+    <div class="topbar-actions">
+      <span id="trial-pill" class="pill" hidden></span>
+      <span id="live-pill" class="pill live-pill" hidden><span class="live-dot"></span>LIVE</span>
+      <button id="btn-minimize" class="icon-btn" aria-label="Minimize" title="Minimize to floating button">
+        <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M8 3H5a2 2 0 0 0-2 2v3M16 3h3a2 2 0 0 1 2 2v3M8 21H5a2 2 0 0 1-2-2v-3M16 21h3a2 2 0 0 0 2-2v-3"/></svg>
+      </button>
+      <button id="btn-settings" class="icon-btn" aria-label="Settings" title="Settings">
+        <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><line x1="4" y1="6" x2="20" y2="6"/><circle cx="9" cy="6" r="2" fill="currentColor" stroke="none"/><line x1="4" y1="12" x2="20" y2="12"/><circle cx="16" cy="12" r="2" fill="currentColor" stroke="none"/><line x1="4" y1="18" x2="20" y2="18"/><circle cx="11" cy="18" r="2" fill="currentColor" stroke="none"/></svg>
+      </button>
+    </div>
+  </header>
+
+  <div id="install-banner" class="install-banner" hidden>
+    <div class="install-banner-text">
+      <strong>Install Talking Clock</strong>
+      <span>Use Kapoore Art Talking Clock like a mobile app.</span>
+    </div>
+    <div class="install-banner-actions">
+      <button id="btn-install-banner" class="btn btn-primary btn-small">Install App</button>
+      <button id="btn-install-later" class="btn btn-ghost btn-small">Maybe Later</button>
+    </div>
+  </div>
+
+  <div class="date-row">
+    <div class="date-block">
+      <span class="date-label">Local Time</span>
+      <span class="date-value" id="date-value">—</span>
+    </div>
+    <button id="toggle-driving-mode-pill" class="pill-toggle" aria-pressed="false">
+      <svg viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M5 11l1.5-4.5A2 2 0 0 1 8.4 5h7.2a2 2 0 0 1 1.9 1.5L19 11M5 11h14v5H5zM7 16v2M17 16v2"/></svg>
+      <span>Driving mode</span>
+    </button>
+  </div>
+
+  <main class="clock-stage">
+
+    <div class="gauge-wrap">
+      <svg class="gauge-ring" viewBox="0 0 300 300" aria-hidden="true">
+        <defs>
+          <linearGradient id="gauge-gradient" x1="0%" y1="0%" x2="100%" y2="100%">
+            <stop offset="0%" stop-color="#ffb020" />
+            <stop offset="100%" stop-color="#ff8a3d" />
+          </linearGradient>
+        </defs>
+        <circle class="gauge-track" cx="150" cy="150" r="132" />
+        <circle class="gauge-ticks" cx="150" cy="150" r="132" />
+        <circle id="gauge-progress" class="gauge-progress" cx="150" cy="150" r="132" />
+      </svg>
+      <div class="gauge-inner-ring" aria-hidden="true"></div>
+      <div class="clock-display-wrap">
+        <span class="clock-display" id="clock-display" aria-live="off">10:35</span><span class="clock-ampm" id="clock-ampm">AM</span>
+      </div>
+    </div>
+
+    <div class="status-row">
+      <span id="status-dot" class="status-dot" aria-hidden="true"></span>
+      <span id="status-text" class="status-text">TALKING CLOCK READY</span>
+    </div>
+
+    <div class="hands-free-badge">
+      <svg viewBox="0 0 24 24" width="13" height="13" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 2l8 3v6c0 5-3.5 8.5-8 10-4.5-1.5-8-5-8-10V5z"/></svg>
+      HANDS-FREE
+    </div>
+
+    <div class="next-announcement" id="next-announcement-block">
+      <div class="next-announcement-top">
+        <div class="next-announcement-left">
+          <span class="next-label">Next Announcement</span>
+          <span class="next-time"><span id="next-time">—</span><span class="next-ampm" id="next-ampm"></span></span>
+        </div>
+        <div class="next-announcement-right">
+          <span class="next-label">In</span>
+          <span class="next-countdown" id="next-countdown">—:—</span>
+        </div>
+      </div>
+      <div class="progress-track"><div class="progress-fill" id="linear-progress"></div></div>
+    </div>
+
+    <div class="interval-quickselect" id="meta-row">
+      <div class="interval-header">
+        <span class="field-label">Announcement Interval</span>
+        <span id="meta-interval" class="interval-current">Every 5 min</span>
+      </div>
+      <div class="chip-row" id="interval-chips"></div>
+    </div>
+
+    <div class="info-chip-row">
+      <div class="info-chip" id="bt-hint">
+        <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M6.5 6.5l11 11L12 23V1l5.5 5.5-11 11"/></svg>
+        <div class="info-chip-text">
+          <span class="info-chip-label">Audio Output</span>
+          <span class="info-chip-value">Uses your phone's active output</span>
+        </div>
+      </div>
+      <div class="info-chip">
+        <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M11 5 6 9H2v6h4l5 4z"/><path d="M15.5 8.5a5 5 0 0 1 0 7"/></svg>
+        <div class="info-chip-text">
+          <span class="info-chip-label">Voice</span>
+          <span class="info-chip-value" id="meta-language">Hindi</span>
+        </div>
+      </div>
+    </div>
+
+    <p id="speech-hint" class="hint-text" hidden>Tap START once more to enable voice announcements.</p>
+    <p id="background-hint" class="hint-text muted">Once started, Talking Clock keeps announcing with the screen off or the app switched away (works best on Android). On iPhone, Safari may pause it a few minutes after you leave the app — reopen it to resume.</p>
+    <p class="hint-text muted" id="last-announced">Volume is controlled by your phone, Bluetooth, or car audio.</p>
+  </main>
+
+  <div class="controls-row">
+    <button id="btn-start" class="btn btn-start">
+      <svg viewBox="0 0 24 24" width="22" height="22" fill="currentColor"><path d="M8 5v14l11-7z"/></svg>
+      <span>START</span>
+    </button>
+    <button id="btn-stop" class="btn btn-stop" hidden>
+      <svg viewBox="0 0 24 24" width="20" height="20" fill="currentColor"><rect x="6" y="6" width="12" height="12" rx="1.5"/></svg>
+      <span>STOP</span>
+    </button>
+  </div>
+
+  <div class="secondary-row" id="secondary-row"></div>
+
+  <footer class="footer">© Kapoore Art — Talking Clock</footer>
+
+  <!-- Floating widget shown only when minimized. This is an in-app overlay
+       (not a system-wide bubble over other apps — the web platform doesn't
+       allow that without a native app + special OS permission). The clock
+       engine keeps running underneath regardless of this UI state. -->
+  <button id="floating-widget" class="floating-widget" aria-label="Restore Talking Clock">
+    <svg class="floating-widget-ring" viewBox="0 0 64 64" aria-hidden="true">
+      <circle cx="32" cy="32" r="28" class="fw-track" />
+      <circle id="floating-widget-progress" cx="32" cy="32" r="28" class="fw-progress" />
+    </svg>
+    <span class="floating-widget-time" id="floating-widget-time">--:--</span>
+  </button>
+</section>
+
+<!-- ======================= SETTINGS OVERLAY ======================= -->
+<div id="view-settings" class="overlay" hidden>
+  <div class="overlay-panel">
+    <div class="overlay-header">
+      <h2>Settings</h2>
+      <button id="btn-close-settings" class="icon-btn" aria-label="Close">
+        <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M18 6 6 18M6 6l12 12"/></svg>
+      </button>
+    </div>
+
+    <div class="overlay-body">
+
+      <label class="field">
+        <span class="field-label">Language</span>
+        <select id="set-language" class="select"></select>
+      </label>
+
+      <label class="field">
+        <span class="field-label">Voice</span>
+        <select id="set-voice" class="select"></select>
+      </label>
+
+      <button id="btn-test-voice" class="btn btn-outline">▶ Test Voice</button>
+      <p id="voice-msg" class="hint-text" role="status"></p>
+
+      <label class="field">
+        <span class="field-label">Speech Speed</span>
+        <select id="set-speed" class="select"></select>
+      </label>
+
+      <label class="field">
+        <span class="field-label">Announcement Interval</span>
+        <select id="set-interval" class="select"></select>
+      </label>
+
+      <label class="field" id="custom-interval-field" hidden>
+        <span class="field-label">Custom Interval (1–120 min)</span>
+        <input type="number" id="set-custom-interval" class="select" min="1" max="120" value="5" />
+      </label>
+
+      <p class="hint-text muted">Voice volume is controlled by your phone / Bluetooth / car audio volume.</p>
+
+      <label class="field-row">
+        <span class="field-label">Screen Wake Lock</span>
+        <label class="switch">
+          <input type="checkbox" id="set-wakelock" />
+          <span class="switch-track"></span>
+        </label>
+      </label>
+      <p id="wakelock-support-msg" class="hint-text muted"></p>
+
+      <div class="overlay-section-title">Account</div>
+      <button id="btn-open-license" class="btn btn-outline">License &amp; Plan</button>
+
+      <div class="overlay-footer">
+        <button id="btn-save-settings" class="btn btn-primary btn-large">Save</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ======================= LICENSE / PAYMENT SCREEN ======================= -->
+<section id="view-license" class="view" hidden>
+  <div class="license-wrap">
+    <div class="wordmark small">KAPOORE ART</div>
+
+    <div id="license-status-block">
+      <!-- populated by JS: trial countdown, active license, or expired -->
+    </div>
+
+    <div id="payment-block" hidden>
+      <h2 class="pay-heading">Get Lifetime Access</h2>
+      <div class="pay-price">₹299/-</div>
+      <div class="pay-sub">ONE-TIME PAYMENT · LIFETIME ACCESS</div>
+      <ul class="pay-list">
+        <li>No monthly subscription</li>
+        <li>No yearly renewal</li>
+        <li>No hidden charges</li>
+      </ul>
+
+      <div class="qr-wrap">
+        <div id="qr-canvas-holder"></div>
+        <div class="upi-id">dkapoore@oksbi</div>
+        <button id="btn-download-qr" class="btn btn-outline btn-small">Download QR</button>
+      </div>
+
+      <div class="receipt-block">
+        <h3>Upload Payment Receipt</h3>
+        <input type="file" id="receipt-file" accept=".jpg,.jpeg,.png,.webp,.pdf" hidden />
+        <button id="btn-choose-receipt" class="btn btn-outline btn-small">Choose Receipt</button>
+        <span id="receipt-filename" class="hint-text"></span>
+        <img id="receipt-preview" class="receipt-preview" hidden />
+        <label class="field">
+          <span class="field-label">Email (optional, for your license code)</span>
+          <input type="email" id="receipt-email" class="select" placeholder="you@example.com" />
+        </label>
+        <button id="btn-upload-receipt" class="btn btn-primary btn-small">Upload Payment Receipt</button>
+        <div id="receipt-status" class="hint-text" role="status"></div>
+      </div>
+
+      <div class="activate-block">
+        <h3>Enter License Code</h3>
+        <input type="text" id="license-code-input" class="select" placeholder="XXXX-XXXX-XXXX-XXXX" autocapitalize="characters" />
+        <button id="btn-activate-license" class="btn btn-primary btn-large">Activate License</button>
+        <div id="activate-status" class="hint-text" role="status"></div>
+      </div>
+    </div>
+
+    <button id="btn-license-back" class="btn btn-ghost" hidden>Back</button>
+    <footer class="footer">© Kapoore Art — Talking Clock</footer>
+  </div>
+</section>
+
+<div id="toast" class="toast" role="status" hidden></div>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js" defer></script>
+<script src="config.js"></script>
+<script src="app.js" defer></script>
+</body>
+</html>
